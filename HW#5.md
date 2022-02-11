@@ -352,3 +352,106 @@ JWT tokens are JSON encoded data structures contains information about issuer, s
 
 ---
 
+Method security is an approach that adds support for securing methods mostly through annotations on Spring Security beans via <method-security>  element. Methods can be secured by the use of annotations (defined at the interface or class level) or by defining a set of pointcuts. We also need to explicitly enable method security by putting the `@EnableGlobalMethodSecurity` annotation on your `ApplicationContextConfiguration`. 
+
+```
+@Configuration
+@EnableGlobalMethodSecurity(
+   prePostEnabled=true, // (1)
+   securedEnabled=true, // (2)
+   jsr250Enabled=true) // (3)
+Public class YourSecurityConfig  extends WebSecurityConfigurerAdapter{
+}
+```
+
+`<method-security>` has attributes :
+
+- `pre-post-enabled`  : Enables Spring Security’s *pre* and *post* invocation annotations (`@PreFilter`, `@PreAuthorize`, `@PostFilter`, `@PostAuthorize`) for this application context. The default value is "true".
+
+- `secured-enabled` : Enables Spring Security’s `@Secured` annotation for this application context. The default value is "false".
+
+- `jsr250-enabled` : Enables JSR-250 authorization annotations (`@RolesAllowed`, `@PermitAll`, `@DenyAll`) for this application context. The default value is "false".
+
+- `proxy-target-class` : If true, class based proxying will be used instead of interface based proxying. The default value is "false".
+
+`@Secured` and `@RolesAllowed` take in an authority/role string as value. `@PreAuthorize` and `@PostAuthorize` contain not only authorities/roles, but also any valid SpEL expression. If we try and access a protected method with an insufficient authority/role, these annotations will raise an `AccessDeniedException`.
+
+With method security, we could secure our service layer  for example  by restricting which roles are able to execute a particular method  and hence test it using dedicated method-level security test support.
+
+
+---
+
+#### Q11 - What Proxy means and how and where can be used ?
+
+---
+
+Proxy  is a structural pattern that provides a substitute or placeholder for another object in order to control creation and access to the original object. This placeholder object is called *proxy object*. The proxy pattern allows us to perform some logic either before or after invoking the original object. It is mostly used for postponing the cost of instantiating of an object ( especially an expensive to create object) until it is actually needed by clients.
+
+Spring creates a new caching proxy class by adding `@Cacheable` annotation. This class will be responsible of adding *Caching* behavior and will be used for dependency injection.
+
+As an example of proxy, we can consider a report viewer application that generates and displays sales reports. When the application starts, it displays a UI where users can specify the format and amount of data to display in a report. Users can also specify the type of report to generate, such as a daily sales report, a complex sales forecast report for the next quarter, and on. The application has a report generator object, a resource consuming (expensive) object that gathers report data from various sources, analyzes them, formats them, and sends it to the UI for display. In the report viewer application, it is not necessary to create the report generator object when the application loads. We want the UI to be light and start up quickly. It’s only when a user clicks on the Generate Report button on the UI we will need to instantiate the report generator object and ask it to create the report. 
+
+There are some types of proxy :
+- **Virtual proxy** : Creates expensive objects on demand. For instance,  we can create a proxy *with the same interface* as the real report generator object. The UI keeps interacting with the proxy. It is only when the UI asks the proxy to generate a report, the proxy will instantiate the real report generator object. 
+
+- **Protection proxy** : Controls access to the real object. As an example, in the report viewer application, a report generator object generates sensitive reports that a protection proxy allows access to only users with the Manager role.
+
+- **Remote proxy** : Represents an object running on a remote JVM. Java RMI and Jini used to create distributed applications in Java uses remote proxies, which are called *stubs*. 
+
+- **Smart reference proxy** : Performs additional actions on the real object, such as maintaining reference counts to a real object so that the real object can be freed when no more references exist. It can also load and cache a persistent object in memory when first referenced or lock a real object to ensure that no other objects can change it.
+
+
+---
+
+#### Q12 - What is Wrapper Class and where can be used ?
+
+---
+
+Wrapper class provides us an exchange mechanism between primitive types and objects. When we create an object to a wrapper class, it contains a field that we can store primitive data type values.  A Wrapper class isencapsulates primitive data types via their objects. 
+
+|Primitive Data Type | Wrapper Class |
+|---------------------------|--------------------|
+| char | Character |
+| byte | Byte |
+|short | Short |
+|int | Integer |
+| long | Long |
+| float | Float |
+| double | Double |
+| boolean | Boolean |
+
+*Autoboxing* and *unboxing* feature convert primitives into objects and objects into primitives automatically. The automatic conversion of primitive into an object is known as *autoboxing* and the opposite direction of conversion is known as *unboxing*.
+
+We use wrapper class when :
+- We need to change the value in method. Java supports only call by value. So, if we pass a primitive value, it will not change the original value. But, if we convert the primitive value in an object, it will change the original value.
+
+- We need to convert the objects into streams to perform the serialization. If we have a primitive value, we can convert it in objects through the wrapper classes.
+- We need Java synchronization that works only with objects in *Multithreading*.
+- We need the classes in `java.util package` which handles only objects and hence wrapper classes help in this  case.
+- We need data structures in the Collection framework, such as *ArrayList*, *LinkedList*,  *HashSet*, *LinkedHashSet*, *TreeSet*, *PriorityQueue*, *ArrayDeque* and *Vector*, that store only objects (reference types) and not primitive types.
+
+
+---
+
+#### Q13 - What is SSL ? What is TLS ? What is the difference ? How can we use them ?
+
+---
+
+SSL (*Secure Sockets Layer*) is a cryptographic protocol that facilities secure, encrypted connections on the Internet. The most well-known use of SSL is web browsers connecting to websites, where SSL is used on top of HTTP to create a HTTPS connection. 
+
+TLS (*Transport Layer Security*)  is also a cryptographic protocols that encrypt data and authenticate a connection when transporting data on the Internet. TLS is  just a newer and upgraded version of SSL. It fixes some security vulnerabilities in the earlier SSL protocols.
+
+How they establish secure connections is the main difference between them. They both do it through a process called “the handshake”. Handshake is how the server and the client authenticate each other before finally creating an encrypted connection. The SSL handshake involves using a port to make what is known as an explicit connection. However, TLS handshake connects via a protocol, which is known as an implicit connection. The process of both handshakes is determined by *cipher suites*. *Cipher suites* are algorithms that outline the sequence of steps that must be performed in order to execute a cryptographic function. TLS-supported cipher suites are faster and more secure than SSL-supported cipher suites.  
+
+We use them by installing the digital certificate on our server so that web browsers can connect with our site via HTTPS. All modern SSL certificates should work by doing this via the TLS protocol.
+
+
+---
+
+#### Q14 - Why do you need the intercept-url ?
+
+---
+
+Most web applications using Spring Security only have a couple of intercept-urls because they only have very basic security requirements. We need to have unauthenticated access to the login and login-error screens and usually some aspect of the public site, so that can be a few URL patterns. Then there's often an admin section, and then everything else is `ROLE_USER`.
+If we need more roles, we should associate them with top level URL path components. Although it's not required, it makes it easier to be sure that resources are appropriately protected. We need the *intercept-url* to create these top level URL path components easily.
+
